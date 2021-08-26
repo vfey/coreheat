@@ -1,12 +1,19 @@
 Package: coreheat
 Type: Package
-Title: Correlation heatmaps
+Title: Correlation Heatmaps
 Version: 0.1.0
-Author: Vidal Fey based on code created by Henri Sara
-Maintainer: Dhanaprakash Jambulingam <dhajam@utu.fi>
-Description: Create correlation heatmaps from a numeric matrix. Optionally, data can be annotated using, e.g., biomart, clustered and filtered by correlation and/or tree cutting.
-Depends: medseqr, Biobase
-Imports: WGCNA
-License: MIT License
+Date: 2021-08-19
+Author: Vidal Fey [aut, cre], Henri Sara [aut]
+Authors@R: c(person("Vidal", "Fey", email = "vidal.fey@gmail.com", role=c("aut", "cre")), person("Henri", "Sara", email = "henri.sara@gmail.com", role=c("aut")))
+Maintainer: Vidal Fey <vidal.fey@gmail.com>
+Description: Create correlation heatmaps from a numeric matrix. Optionally, data can be annotated using, e.g., BioMart,
+    clustered and filtered by correlation and/or tree cutting.
+Depends: Biobase
+Imports: WGCNA, heatmapFlex, convertid, methods, graphics, grDevices
+License: GPL-3
 Encoding: UTF-8
-LazyData: true
+RoxygenNote: 7.1.1
+Suggests: 
+    rmarkdown,
+    knitr
+VignetteBuilder: knitr

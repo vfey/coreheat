@@ -1,3 +1,4 @@
+#' @noRd
 lintersect <- function(lst) {
         res <- lst[[1]]
         if (length(lst) > 1) {
@@ -8,6 +9,7 @@ lintersect <- function(lst) {
         res
 }
 
+#' @noRd
 lunion <- function(lst) {
         res <- lst[[1]]
         if (length(lst) > 1) {
@@ -19,7 +21,7 @@ lunion <- function(lst) {
 }
 
 
+#' @noRd
 id <- function(x) {
 	x
 }
-
