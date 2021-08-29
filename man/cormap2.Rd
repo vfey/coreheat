@@ -9,7 +9,7 @@ cormap2(
   cormat = NULL,
   lab = NULL,
   convert = TRUE,
-  biomart = TRUE,
+  biomart = FALSE,
   cluster_correlations = TRUE,
   main = "",
   cex = 0.7,
@@ -18,6 +18,7 @@ cormap2(
   cor.mar = 0.5,
   cut.thr = NULL,
   cut.size = 1,
+  autoadj = TRUE,
   labelheight = 0.2,
   labelwidth = 0.2,
   add.sig = FALSE,
@@ -33,14 +34,14 @@ cormap2(
 \item{cormat}{(\code{numeric}). A correlation matrix. If this not \code{NULL} then \option{x} is ignored. Defaults to \code{NULL}.}
 
 \item{lab}{(\code{character}). Optional row/column labels for the heatmap. Defaults to NULL meaning the row names of the input data
-are used.}
+are used. Note that the order of the labels must match the order of the row names of the input data!}
 
 \item{convert}{(\code{logical}). Should an attempt be made to convert IDs provided as row names of the input or in \option{lab}?
 Defaults to \code{TRUE}. Conversion will be done using BioMart or an annotation package, depending on \option{biomart}.}
 
-\item{biomart}{(\code{logical}). Should BioMart (or an annotation package) be used to convert IDs? If \code{TRUE} (the default)
+\item{biomart}{(\code{logical}). Should BioMart (or an annotation package) be used to convert IDs? If \code{TRUE}
 the \code{todisp2} function in package \code{convertid} attempts to access the BioMart API to convert ENSG IDs to Gene Symbols
-but if that fails the user can set this option to \code{FALSE} to use the traditional \code{AnnotationDbi} Bimap interface.}
+Defaults to \code{FALSE} which will use the traditional \code{AnnotationDbi} Bimap interface.}
 
 \item{cluster_correlations}{(\code{logical}). Should the correlation matrix be clustered before plotting? Defaults to \code{TRUE}.}
 
@@ -62,6 +63,8 @@ meet. Defaults to \code{0.5} meaning at least 50 per cent of the values in a row
 
 \item{cut.size}{(\code{numeric}). Minimum number of objects on a dendrogram branch considered a cluster. Passed on to argument
 \code{minSize} in \code{\link[WGCNA]{cutreeStatic}}. Defaults to \code{1}.}
+
+\item{autoadj}{(\code{logical}). Should plot measures be adjusted automatically? Defaults to \code{TRUE}.}
 
 \item{labelheight}{(\code{numeric} or \code{lcm(numeric)}). Relative or absolute height (using \code{\link[graphics]{lcm}}, see \code{\link[graphics]{layout}}) of the labels.}
 
@@ -106,23 +109,36 @@ P-Values are calcluated from the t-test value of the correlation coefficient: \e
     }
 }
 \examples{
-# Generate a random 10x10 matrix with two distinct sets and plot it with
-# default settings but without biomart since the IDs are made up:
+# 1. Generate a random 10x10 matrix with two distinct sets and plot it with
+# default settings without ID conversion since the IDs are made up:
 set.seed(1234)
 mat <- matrix(c(rnorm(100, mean = 1), rnorm(100, mean = -1)), nrow = 20)
 rownames(mat) <- paste0("gene-", 1:20)
 colnames(mat) <- paste0(c("A", "B"), rep(1:5, 2))
-cormap2(mat, biomart=FALSE)
+cormap2(mat, convert=FALSE, main="Random matrix")
 
-# Use a real-world dataset from TCGA (see README file in inst/extdata directory).
-# BioMart is used to convert Ensembl Gene IDs to HGNC Symbols
+# 2. Use a real-world dataset from TCGA (see README file in inst/extdata directory).
+# Package 'convertid' is used to convert Ensembl Gene IDs to HGNC Symbols
 ## Read data and prepare input data frame
 fl <- system.file("extdata", "PrCaTCGASample.txt", package = "coreheat", mustWork = TRUE)
-dat <- read.delim(fl)
-dat <- data.frame(dat[, grep("TCGA", names(dat))], row.names=dat$ensembl_gene_id)
-## Plot correlation map
-cormap2(dat, biomart=FALSE)
+dat0 <- read.delim(fl, stringsAsFactors=FALSE)
+dat1 <- data.frame(dat0[, grep("TCGA", names(dat0))], row.names=dat0$ensembl_gene_id)
+cormap2(dat1, main="TCGA data frame + ID conversion")
 
+# 3. Use separately supplied IDs with a matrix created from the data frame of the
+# previous example and highlight genes of interest
+dat2 <- as.matrix(dat0[, grep("TCGA", names(dat0))])
+sym <- dat0$hgnc_symbol
+cormap2(dat1, convert=FALSE, lab=sym, genes2highl=c("GNAS","NCOR1","AR", "ATM"),
+main="TCGA matrix + custom labels")
+
+# 4. Use an ExpressionSet object and add significance asterisks
+## For simplicity reasons we create the ExpressionSet from a matrix created
+## from the data frame in the second example
+expr <- Biobase::ExpressionSet(as.matrix(dat1))
+cormap2(expr, add.sig=TRUE, main="TCGA ExpressionSet object + ID conversion")
+
+# More examples can be found in the vignette.
 }
 \references{
 Miles, J., & Banyard, P. (2007). \emph{Understanding and using statistics in psychology: A practical introduction.}

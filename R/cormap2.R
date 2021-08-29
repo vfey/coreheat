@@ -1,8 +1,11 @@
 #' @title Draw Correlation Heatmaps
 #' @docType package
 #' @name coreheat
-#' @description Create correlation heatmaps from a numeric matrix. Optionally, data can be annotated using, e.g., BioMart,
-#'     clustered and filtered by correlation and/or tree cutting.
+#' @description Create correlation heatmaps from a numeric matrix. Ensembl Gene ID row names can be converted to Gene Symbols
+#'     using, e.g., BioMart. Optionally, data can be clustered and filtered by correlation, tree cutting and/or number
+#'     of missing values. Genes of interest can be highlighted in the plot and correlation significance be indicated by
+#'     asterisks encoding corresponding P-Values. Plot dimensions and label measures are adjusted automatically by default.
+#'     The plot features rely on the heatmap.n2() function in the 'heatmapFlex' package.
 #' @author Vidal Fey <vidal.fey@gmail.com>, Henri Sara <henri.sara@gmail.com>
 #' Maintainer: Vidal Fey <vidal.fey@gmail.com>
 #' @details \tabular{ll}{
@@ -29,12 +32,12 @@ NULL
 #' @param x (\code{ExpressionSet}, \code{data.frame} or \code{numeric}). A numeric data frame, matrix or an ExpressionSet object.
 #' @param cormat (\code{numeric}). A correlation matrix. If this not \code{NULL} then \option{x} is ignored. Defaults to \code{NULL}.
 #' @param lab (\code{character}). Optional row/column labels for the heatmap. Defaults to NULL meaning the row names of the input data
-#'     are used.
+#'     are used. Note that the order of the labels must match the order of the row names of the input data!
 #' @param convert (\code{logical}). Should an attempt be made to convert IDs provided as row names of the input or in \option{lab}?
 #'     Defaults to \code{TRUE}. Conversion will be done using BioMart or an annotation package, depending on \option{biomart}.
-#' @param biomart (\code{logical}). Should BioMart (or an annotation package) be used to convert IDs? If \code{TRUE} (the default)
+#' @param biomart (\code{logical}). Should BioMart (or an annotation package) be used to convert IDs? If \code{TRUE}
 #'     the \code{todisp2} function in package \code{convertid} attempts to access the BioMart API to convert ENSG IDs to Gene Symbols
-#'     but if that fails the user can set this option to \code{FALSE} to use the traditional \code{AnnotationDbi} Bimap interface.
+#'     Defaults to \code{FALSE} which will use the traditional \code{AnnotationDbi} Bimap interface.
 #' @param cluster_correlations (\code{logical}). Should the correlation matrix be clustered before plotting? Defaults to \code{TRUE}.
 #' @param main (\code{character}). The main title of the plot. Defaults to \code{""}.
 #' @param cex (\code{numeric}). Font size. Defaults to \code{0.7}.
@@ -48,6 +51,7 @@ NULL
 #'     \code{\link[WGCNA]{cutreeStatic}}. Defaults to \code{NULL} meaning no cutting.
 #' @param cut.size (\code{numeric}). Minimum number of objects on a dendrogram branch considered a cluster. Passed on to argument
 #'     \code{minSize} in \code{\link[WGCNA]{cutreeStatic}}. Defaults to \code{1}.
+#' @param autoadj (\code{logical}). Should plot measures be adjusted automatically? Defaults to \code{TRUE}.
 #' @param labelheight (\code{numeric} or \code{lcm(numeric)}). Relative or absolute height (using \code{\link[graphics]{lcm}}, see \code{\link[graphics]{layout}}) of the labels.
 #' @param labelwidth (\code{numeric} or \code{lcm(numeric)}). Relative or absolute width (using \code{\link[graphics]{lcm}}, see \code{\link[graphics]{layout}}) of the labels.
 #' @param add.sig (\code{logical}). Should significance asterisks be drawn? If \code{TRUE} P-Values for correlation significance
@@ -82,27 +86,40 @@ NULL
 #' @return Invisibly returns the correlation matrix, though the function is mainly called for its side-effect of producing
 #'     a heatmap (if \code{doPlot = TRUE} which is the default).
 #' @examples
-#' # Generate a random 10x10 matrix with two distinct sets and plot it with
-#' # default settings but without biomart since the IDs are made up:
+#' # 1. Generate a random 10x10 matrix with two distinct sets and plot it with
+#' # default settings without ID conversion since the IDs are made up:
 #' set.seed(1234)
 #' mat <- matrix(c(rnorm(100, mean = 1), rnorm(100, mean = -1)), nrow = 20)
 #' rownames(mat) <- paste0("gene-", 1:20)
 #' colnames(mat) <- paste0(c("A", "B"), rep(1:5, 2))
-#' cormap2(mat, biomart=FALSE)
+#' cormap2(mat, convert=FALSE, main="Random matrix")
 #'
-#' # Use a real-world dataset from TCGA (see README file in inst/extdata directory).
-#' # BioMart is used to convert Ensembl Gene IDs to HGNC Symbols
+#' # 2. Use a real-world dataset from TCGA (see README file in inst/extdata directory).
+#' # Package 'convertid' is used to convert Ensembl Gene IDs to HGNC Symbols
 #' ## Read data and prepare input data frame
 #' fl <- system.file("extdata", "PrCaTCGASample.txt", package = "coreheat", mustWork = TRUE)
-#' dat <- read.delim(fl)
-#' dat <- data.frame(dat[, grep("TCGA", names(dat))], row.names=dat$ensembl_gene_id)
-#' ## Plot correlation map
-#' cormap2(dat, biomart=FALSE)
+#' dat0 <- read.delim(fl, stringsAsFactors=FALSE)
+#' dat1 <- data.frame(dat0[, grep("TCGA", names(dat0))], row.names=dat0$ensembl_gene_id)
+#' cormap2(dat1, main="TCGA data frame + ID conversion")
 #'
+#' # 3. Use separately supplied IDs with a matrix created from the data frame of the
+#' # previous example and highlight genes of interest
+#' dat2 <- as.matrix(dat0[, grep("TCGA", names(dat0))])
+#' sym <- dat0$hgnc_symbol
+#' cormap2(dat1, convert=FALSE, lab=sym, genes2highl=c("GNAS","NCOR1","AR", "ATM"),
+#' main="TCGA matrix + custom labels")
+#'
+#' # 4. Use an ExpressionSet object and add significance asterisks
+#' ## For simplicity reasons we create the ExpressionSet from a matrix created
+#' ## from the data frame in the second example
+#' expr <- Biobase::ExpressionSet(as.matrix(dat1))
+#' cormap2(expr, add.sig=TRUE, main="TCGA ExpressionSet object + ID conversion")
+#'
+#' # More examples can be found in the vignette.
 #' @export
-cormap2 <- function(x, cormat = NULL, lab = NULL, convert = TRUE, biomart = TRUE, cluster_correlations = TRUE, main = "",
-                    cex = 0.7, na.frac = 0.1, cor.thr = NULL, cor.mar = 0.5, cut.thr = NULL, cut.size = 1, labelheight= 0.2,
-                    labelwidth = 0.2, add.sig = FALSE, genes2highl = NULL, order.list = TRUE, doPlot = TRUE,
+cormap2 <- function(x, cormat = NULL, lab = NULL, convert = TRUE, biomart = FALSE, cluster_correlations = TRUE, main = "",
+                    cex = 0.7, na.frac = 0.1, cor.thr = NULL, cor.mar = 0.5, cut.thr = NULL, cut.size = 1, autoadj = TRUE,
+                    labelheight= 0.2, labelwidth = 0.2, add.sig = FALSE, genes2highl = NULL, order.list = TRUE, doPlot = TRUE,
                     updateProgress = NULL) {
 	cat("@ Calculating correlation matrix...\n")
 	if (is.function(updateProgress)) {
@@ -111,7 +128,13 @@ cormap2 <- function(x, cormat = NULL, lab = NULL, convert = TRUE, biomart = TRUE
   if (!is.null(cormat)) {
     x <- cormat
   }
-	if (add.sig) {
+  if (!is.null(lab)) {
+    cat("    Working with user-provided labels...\n")
+    if (length(lab) != nrow(x))
+      stop("Number of labes does not match number of rows in input matrix!")
+    rownames(x) <- lab
+  }
+  if (add.sig) {
 		cormat <- eset_cor(x, with.pvalues = TRUE)
 		list.output <- TRUE
 	} else {
@@ -125,34 +148,28 @@ cormap2 <- function(x, cormat = NULL, lab = NULL, convert = TRUE, biomart = TRUE
 		cat("@ Clustering and filtering correlation matrix...\n")
 		cormat <- clust_cormap(cormat, na.frac=na.frac, cor.thr=cor.thr, cor.mar=cor.mar, cut.thr=cut.thr, cut.size=cut.size, list.output = list.output)
 	}
-	if (list.output) {
-		cormat.p <- cormat$pval[nrow(cormat$cormat):1, ]
-		corm <- cormat <- cormat$cormat[nrow(cormat$cormat):1, ]
-	} else {
-		cormat.p <- NULL
-		corm <- cormat <- cormat[nrow(cormat):1, ]
-	}
-	if (is.null(lab)) {
-		lab.df <- data.frame(ID=rownames(cormat), stringsAsFactors=F)
-		rownames(lab.df) <- rownames(cormat)
-	} else if (is.character(lab)) {
-	  lab.df <- data.frame(ID=lab, stringsAsFactors=F)
-	  rownames(lab.df) <- lab
-	}
-	cat("@ Formatting output matrix...\n")
+  if (list.output) {
+    cormat.p <- cormat$pval[nrow(cormat$cormat):1, ]
+    corm <- cormat <- cormat$cormat[nrow(cormat$cormat):1, ]
+  } else {
+    cormat.p <- NULL
+    corm <- cormat <- cormat[nrow(cormat):1, ]
+  }
+  cat("@ Formatting output matrix...\n")
 	if (is.function(updateProgress)) {
 		updateProgress(detail = "Formatting matrix")
 	}
-	cat("  Row names:\n")
-	if (convert) {
-	  if (!is.null(lab)) {
-	    xl <- xlab <- convertid::todisp2(lab, biomart = biomart)
-	  } else {
-	    xl <- xlab <- convertid::todisp2(rownames(cormat), biomart = biomart)
-	  }
-	}
-	cat("  Column names:\n")
-	yl <- ylab <- convertid::todisp2(colnames(cormat), lab.df, biomart)
+  cat("  Checking input IDs:\n")
+  if (convert) {
+    cat("    Attempting to convert input matrix row names...\n")
+    xl <- xlab <- convertid::todisp2(rownames(cormat), biomart = biomart)
+    yl <- ylab <- rev(xl)
+  } else {
+    cat("    Using input matrix row names...\n")
+    xl <- xlab <- rownames(cormat)
+    yl <- ylab <- colnames(cormat)
+  }
+
 	if (any(duplicated(xl))) {
 		cat("  Fixing duplicated row names...\n")
 		if (is.function(updateProgress)) {
@@ -174,7 +191,7 @@ cormap2 <- function(x, cormat = NULL, lab = NULL, convert = TRUE, biomart = TRUE
 		if (is.function(updateProgress)) {
 			updateProgress(detail = "Generating heatmap")
 		}
-		heatmap.cor(cormat, order.list=order.list, main=main, x.labels = xlab, y.labels = ylab, labelheight=labelheight, labelwidth=labelwidth, cex=cex, add.sig=add.sig, pv=cormat.p, genes2highl=genes2highl)
+		heatmap.cor(cormat, order.list=order.list, main=main, x.labels = xlab, y.labels = ylab, autoadj = autoadj, labelheight=labelheight, labelwidth=labelwidth, cex=cex, add.sig=add.sig, pv=cormat.p, genes2highl=genes2highl)
 	}
 	return(invisible(corm))
 }
@@ -317,15 +334,22 @@ clust_cormap <- function(cormat, na.frac=0.1, distfn=function(cm) (1-cm), method
 
 #' Helper function to draw the heatmap. Wrapper around 'heatmapFlex::heatmap.n2'.
 #' @noRd
-heatmap.cor <- function(cormat, order.list = TRUE, main="", main_postfix="Dissimilarity = 1 - Correlation", x.labels = NULL, y.labels = NULL, labelheight=0.2, labelwidth=0.2, cex = 0.5, add.sig=FALSE, pv=NULL, genes2highl=NULL) {
+heatmap.cor <- function(cormat, order.list = TRUE, main="", main_postfix="Dissimilarity = 1 - Correlation", x.labels = NULL, y.labels = NULL, autoadj = TRUE, labelheight=0.2, labelwidth=0.2, cex = 0.5, add.sig=FALSE, pv=NULL, genes2highl=NULL) {
 	main.map <- paste(main, main_postfix, sep="\n")
 	col <- colorRampPalette(c("blue", "white", "red"))(50)
 	if(order.list){
-		cormat <- cormat[nrow(cormat):1, ]
+	  cat("  Ordering Y-axis...\n")
+	  cormat <- cormat[nrow(cormat):1, ]
 		if (add.sig) pv <- pv[nrow(pv):1, ]
 		x.labels <- rev(x.labels)
 	}
-	heatmapFlex::heatmap.n2(cormat, order_list = order.list, reorder=c(FALSE, FALSE), labRow = x.labels, labCol = y.labels, labelheight=labelheight, labelwidth=labelwidth, col=col, main=main.map, r.cex=cex, c.cex=cex, add.sig=add.sig, pv=pv, genes2highl=genes2highl)
+	if (autoadj) {
+	  adj.l <- plotAdjust(cormat, cormap = TRUE)
+	} else {
+	  adj.l <- list(labelwidth = labelwidth, labelheight = labelheight, r.cex = cex, c.cex = cex)
+	}
+
+	heatmapFlex::heatmap.n2(cormat, order_list = order.list, reorder=c(FALSE, FALSE), labRow = x.labels, labCol = y.labels, labelheight=adj.l$labelheight, labelwidth=adj.l$labelwidth, col=col, main=main.map, r.cex=adj.l$r.cex, c.cex=adj.l$r.cex, add.sig=add.sig, pv=pv, genes2highl=genes2highl)
 }
 
 

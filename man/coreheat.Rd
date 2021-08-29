@@ -5,8 +5,11 @@
 \alias{coreheat}
 \title{Draw Correlation Heatmaps}
 \description{
-Create correlation heatmaps from a numeric matrix. Optionally, data can be annotated using, e.g., BioMart,
-    clustered and filtered by correlation and/or tree cutting.
+Create correlation heatmaps from a numeric matrix. Ensembl Gene ID row names can be converted to Gene Symbols
+    using, e.g., BioMart. Optionally, data can be clustered and filtered by correlation, tree cutting and/or number
+    of missing values. Genes of interest can be highlighted in the plot and correlation significance be indicated by
+    asterisks encoding corresponding P-Values. Plot dimensions and label measures are adjusted automatically by default.
+    The plot features rely on the heatmap.n2() function in the 'heatmapFlex' package.
 }
 \details{
 \tabular{ll}{

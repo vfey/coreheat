@@ -1,5 +1,5 @@
 ---
-title: "coreheat-vignette"
+title: "Correlation Heatmaps"
 output: rmarkdown::html_vignette
 bibliography: refs.bib
 csl: Harvard.csl
@@ -19,3 +19,74 @@ knitr::opts_chunk$set(
 ```{r setup}
 library(coreheat)
 ```
+
+
+## License
+[GPL-3](https://cran.r-project.org/web/licenses/GPL-3)
+
+## Description
+Create correlation heatmaps from a numeric matrix. Ensembl Gene ID row names can be converted to Gene Symbols using, e.g., BioMart. Optionally, data can be clustered and filtered by correlation, tree cutting and/or number of missing values. Genes of interest can be highlighted in the plot and correlation significance be indicated by asterisks encoding corresponding P-Values. Plot dimensions and label measures are adjusted automatically by default. The plot features rely on the heatmap.n2() function in the 'heatmapFlex' package.
+
+## Installation
+### CRAN
+```{r, eval=FALSE}
+install.packages("coreheat")
+```
+
+### Latest development version
+```{r, eval=FALSE}
+install.packages("devtools")  
+devtools::install_github("vfey/coreheat")
+```
+
+## Usage
+### A simple example
+Generate a random 10x10 matrix with two distinct sets and plot it with default settings without ID conversion since the IDs are made up.
+``` {r, out.width='85%', fig.width=6, fig.height=4, fig.align='center'}
+set.seed(1234)
+mat <- matrix(c(rnorm(100, mean = 1), rnorm(100, mean = -1)), nrow = 20)
+rownames(mat) <- paste0("gene-", 1:20)
+colnames(mat) <- paste0(c("A", "B"), rep(1:5, 2))
+cormap2(mat, convert = FALSE, main="Random matrix")
+```
+
+### Use a _real-world_ dataset from TCGA
+A dataset consisting of [333 patients with primary prostate cancer](https://www.cbioportal.org/study/summary?id=prad_tcga_pub) was downloaded from The Cancer Genome Atlas (TCGA) via the cBioPortal for Cancer Genomics and two subsets were created, __PrCaTCGASample.txt__ containing genes commonly associated with cancer, and __PrCaTCGASample_500.txt__ containing 500 genes selected at random.  
+Function \code{\link[convertid]{todisp2}} is used to convert Ensembl Gene IDs to HGNC Symbols.  
+I the following examples, we use the smaller of the two to demonstrate the basic functionality of the package.
+
+#### Cancer-associated genes
+26 genes commonly associated with cancer in general were selected to provide a small demonstration data set.
+``` {r, out.width='85%', fig.width=6, fig.height=4, fig.align='center'}
+## Read data and prepare input data frame
+fl <- system.file("extdata", "PrCaTCGASample.txt", package = "coreheat", mustWork = TRUE)
+dat0 <- read.delim(fl, stringsAsFactors=FALSE)
+dat1 <- data.frame(dat0[, grep("TCGA", names(dat0))], row.names=dat0$ensembl_gene_id)
+cormap2(dat1, main="TCGA data frame + ID conversion")
+```
+
+##### Highlight genes of interest
+Separately supplied IDs are used with a matrix created from the data frame of the previous example and genes of interest are highlighted inside the heatmap to emphasise individual pair-wise correlations.
+``` {r, out.width='85%', fig.width=6, fig.height=4, fig.align='center'}
+dat2 <- as.matrix(dat0[, grep("TCGA", names(dat0))])
+sym <- dat0$hgnc_symbol
+cormap2(dat1, convert=FALSE, lab=sym, genes2highl=c("GNAS","NCOR1","AR", "ATM"),
+main="TCGA matrix + custom labels")
+```
+
+##### Use an ExpressionSet object and add significance asterisks
+The ExpressionSet object is created using the numeric data frame created above from the small TCGA dataset.
+``` {r, out.width='85%', fig.width=6, fig.height=4, fig.align='center'}
+expr <- Biobase::ExpressionSet(as.matrix(dat1))
+cormap2(expr, add.sig=TRUE, main="TCGA ExpressionSet object + ID conversion")
+```
+
+#### Large dataset
+500 genes were selected at random to demonstrate handling of larger datasets. We will first plot the entire matrix and then use the filtering capabilities of `cormap2` to identify possibly co-expressed genes.
+```{r, out.width='85%', fig.width=6, fig.height=4, fig.align='center'}
+fl <- system.file("extdata", "PrCaTCGASample_500.txt", package = "coreheat", mustWork = TRUE)
+dat0_500 <- read.delim(fl, stringsAsFactors=FALSE)
+dat1_500 <- data.frame(dat0_500[, grep("TCGA", names(dat0_500))], row.names=dat0_500$ensembl_gene_id)
+cormap2(dat1_500, main="TCGA 500 genes")
+```
+
