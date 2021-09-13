@@ -12,20 +12,24 @@ cormap2(
   biomart = FALSE,
   cluster_correlations = TRUE,
   main = "",
-  cex = 0.7,
+  postfix = NULL,
+  cex = NULL,
   na.frac = 0.1,
+  cor.cluster = 1,
+  cor.window = NULL,
   cor.thr = NULL,
   cor.mar = 0.5,
   cut.thr = NULL,
-  cut.size = 1,
+  cut.size = 5,
   autoadj = TRUE,
-  labelheight = 0.2,
-  labelwidth = 0.2,
+  labelheight = NULL,
+  labelwidth = NULL,
   add.sig = FALSE,
   genes2highl = NULL,
   order.list = TRUE,
   doPlot = TRUE,
-  updateProgress = NULL
+  updateProgress = NULL,
+  verbose = FALSE
 )
 }
 \arguments{
@@ -47,10 +51,19 @@ Defaults to \code{FALSE} which will use the traditional \code{AnnotationDbi} Bim
 
 \item{main}{(\code{character}). The main title of the plot. Defaults to \code{""}.}
 
-\item{cex}{(\code{numeric}). Font size. Defaults to \code{0.7}.}
+\item{postfix}{(\code{character} of \code{logical}). A plot sub-title. Will be printed below the main title. Defaults to \code{NULL}.}
+
+\item{cex}{(\code{numeric}). Font size. Defaults to \code{0.5} if \code{autoadj} is \code{FALSE}. See 'Details'.}
 
 \item{na.frac}{(\code{numeric}). Fraction of missing values allowed per row of the input matrix. Defaults to \code{0.1} which
 means LESS than 10 per cent of the values in one row are allowed to be NAs.}
+
+\item{cor.cluster}{(\code{numeric}). The correlation cluster along the diagonal 'line' in the heatmap that should be
+zoomed into. A sliding window of size \code{cor.window} will be moved along the diagonal of the correlation
+matrix to find the cluster with the most corelation values meeting \code{core.thr}. Defaults to \code{1}.}
+
+\item{cor.window}{(\code{numeric}). The size of the sliding window (see \code{cor.cluster}). Defaults to \code{NULL}.
+Note that this works only for positive correlations.}
 
 \item{cor.thr}{(\code{numeric}). Correlation threshold to filter the correlation matrix for plotting. Defaults to \code{NULL} meaning
 no filtering. Note that this value will be applied to margin \option{cor.mar} of the values per row.}
@@ -62,13 +75,15 @@ meet. Defaults to \code{0.5} meaning at least 50 per cent of the values in a row
 \code{\link[WGCNA]{cutreeStatic}}. Defaults to \code{NULL} meaning no cutting.}
 
 \item{cut.size}{(\code{numeric}). Minimum number of objects on a dendrogram branch considered a cluster. Passed on to argument
-\code{minSize} in \code{\link[WGCNA]{cutreeStatic}}. Defaults to \code{1}.}
+\code{minSize} in \code{\link[WGCNA]{cutreeStatic}}. Defaults to \code{5}.}
 
 \item{autoadj}{(\code{logical}). Should plot measures be adjusted automatically? Defaults to \code{TRUE}.}
 
-\item{labelheight}{(\code{numeric} or \code{lcm(numeric)}). Relative or absolute height (using \code{\link[graphics]{lcm}}, see \code{\link[graphics]{layout}}) of the labels.}
+\item{labelheight}{(\code{numeric} or \code{lcm(numeric)}). Relative or absolute height (using \code{\link[graphics]{lcm}},
+see \code{\link[graphics]{layout}}) of the labels. Defaults to \code{0.2} if \code{autoadj} is \code{FALSE}. See 'Details'.}
 
-\item{labelwidth}{(\code{numeric} or \code{lcm(numeric)}). Relative or absolute width (using \code{\link[graphics]{lcm}}, see \code{\link[graphics]{layout}}) of the labels.}
+\item{labelwidth}{(\code{numeric} or \code{lcm(numeric)}). Relative or absolute width (using \code{\link[graphics]{lcm}},
+see \code{\link[graphics]{layout}}) of the labels. Defaults to \code{0.2} if \code{autoadj} is \code{FALSE}. See 'Details'.}
 
 \item{add.sig}{(\code{logical}). Should significance asterisks be drawn? If \code{TRUE} P-Values for correlation significance
 are calculated and encoded as asterisks. See 'Details'.}
@@ -78,12 +93,15 @@ If not \code{NULL} will draw a semi-transparent rectangle around the labels and 
 labels.}
 
 \item{order.list}{(\code{logical}). Should the order of the correlation matrix, i.e. the 'list' of labels be reversed?
-Meaningful if the order of input variables should be preserved because \code{\link[graphics]{image}} turns the input matrix.}
+Meaningful if the order of input variables should be preserved because \code{\link[graphics]{image}} turns the input
+matrix. Defaults to \code{TRUE}.}
 
 \item{doPlot}{(\code{logical}). Draw the plot? Defaults to \code{TRUE}.}
 
 \item{updateProgress}{(\code{function}). Function for updating a progress bar in a Shiny web application. This was added here
 for the \strong{BioCPR} application.}
+
+\item{verbose}{(\code{logical}). Should verbose output be written to the console? Defaults to \code{FALSE}.}
 }
 \value{
 Invisibly returns the correlation matrix, though the function is mainly called for its side-effect of producing
@@ -94,7 +112,7 @@ Invisibly returns the correlation matrix, though the function is mainly called f
     numerical \code{matrix}. With the default options it also produces a heatmap.
 }
 \details{
-P-Values are calcluated from the t-test value of the correlation coefficient: \eqn{t = r x sqrt(n-2) / sqrt(1-r^2)},
+P-Values are calculated from the t-test value of the correlation coefficient: \eqn{t = r x sqrt(n-2) / sqrt(1-r^2)},
     where r is the correlation coefficient, n is the number of samples with no missing values for each gene (row-wise
     \code{ncol(eset)} minus the number of columns that have an NA). P-Values are the calculated using \code{\link[stats]{pt}} and
     corrected account for the two-tailed nature of the test, i.e., the possibility of positive as well as negative correlation.
@@ -107,6 +125,11 @@ P-Values are calcluated from the t-test value of the correlation coefficient: \e
     \tab P < 0.01:  **\cr
     \tab P < 0.001: ***\cr
     }
+
+    The label measures (\code{labelheight}, \code{labelwidth} and \code{cex}) are adjusted automatically by default
+    with argument \code{autoadj=TRUE} and have default values which are hard coded into the helper function
+    \code{heatmap.cor}. The values calculated by the helper function \code{plotAdjust} can be overridden by setting
+    any of those arguments to a valid \code{numeric} or \code{lcm(numeric)} value.
 }
 \examples{
 # 1. Generate a random 10x10 matrix with two distinct sets and plot it with

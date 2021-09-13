@@ -1,8 +1,8 @@
 Package: coreheat
 Type: Package
 Title: Correlation Heatmaps
-Version: 0.1.0
-Date: 2021-08-19
+Version: 0.2.2
+Date: 2021-09-13
 Author: Vidal Fey [aut, cre], Henri Sara [aut]
 Authors@R: c(person("Vidal", "Fey", email = "vidal.fey@gmail.com", role=c("aut", "cre")), person("Henri", "Sara", email = "henri.sara@gmail.com", role=c("aut")))
 Maintainer: Vidal Fey <vidal.fey@gmail.com>

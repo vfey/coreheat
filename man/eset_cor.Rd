@@ -4,13 +4,18 @@
 \alias{eset_cor}
 \title{Helper function to calculate the correlation matrix.}
 \usage{
-eset_cor(x, with.pvalues = FALSE)
+eset_cor(x, with.pvalues = TRUE, order.list = TRUE, verbose = FALSE)
 }
 \arguments{
 \item{x}{(\code{ExpressionSet}, \code{data.frame} or \code{numeric}). A numeric data frame, matrix or an ExpressionSet object.}
 
 \item{with.pvalues}{(\code{logical}). Should P-Values be calculated for the correlations? If \code{TRUE} P-Values will be
 depicted in the heatmap by significance asterisks. See 'Details'. Defaults to \code{FALSE}.}
+
+\item{order.list}{(\code{logical}). Is the input matrix column order reversed? Only applicable if input is correlation matrix.
+Defaults to \code{TRUE}.}
+
+\item{verbose}{(\code{logical}). Should verbose output be written to the console? Defaults to \code{FALSE}.}
 }
 \value{
 A correlation \code{matrix} or a \code{list} with three slots: the correlation matrix, the number of samples with no
@@ -20,9 +25,9 @@ A correlation \code{matrix} or a \code{list} with three slots: the correlation m
 Helper function to calculate the correlation matrix.
 }
 \details{
-P-Values are calcluated from the t-test value of the correlation coefficient: \eqn{t = r x sqrt(n-2) / sqrt(1-r^2)},
+P-Values are calculated from the t-test value of the correlation coefficient: \eqn{t = r x sqrt(n-2) / sqrt(1-r^2)},
     where r is the correlation coefficient, n is the number of samples with no missing values for each gene (row-wise
-    \code{ncol(eset)} minus the number of columns that have an NA). P-Values are the calculated using \code{\link[stats]{pt}} and
+    \code{ncol(eset)} minus the number of columns that have an NA). P-Values are then calculated using \code{\link[stats]{pt}} and
     corrected account for the two-tailed nature of the test, i.e., the possibility of positive as well as negative correlation.
     The approach to calculate correlation significance was adopted from \emph{Miles, J., & Banyard, P. (2007)} on
     "Calculating the exact significance of a Pearson correlation in MS Excel".

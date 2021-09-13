@@ -22,7 +22,7 @@ function (dm, cormap = FALSE)
   mc <- max(nchar(rownames(dm)))
   adj.l$labelwidth <- round(log10(sqrt(mc)) / (sqrt(mc) * mc ^ (-mc / 100)), 2) * 1.2 * adj.l$r.cex
   if (cormap) {
-    if (nrow(dm) > 160) {
+    if (nrow(dm) > 190) {
       adj.l$r.cex <- adj.l$c.cex <- round(adj.l$r.cex / log(nrow(dm)), 1)
     }
     if (adj.l$r.cex < 0.1)

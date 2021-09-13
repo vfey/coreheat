@@ -42,7 +42,7 @@ devtools::install_github("vfey/coreheat")
 ## Usage
 ### A simple example
 Generate a random 10x10 matrix with two distinct sets and plot it with default settings without ID conversion since the IDs are made up.
-``` {r, out.width='85%', fig.width=6, fig.height=4, fig.align='center'}
+``` {r, out.width='85%', fig.width=6, fig.height=6, fig.align='center'}
 set.seed(1234)
 mat <- matrix(c(rnorm(100, mean = 1), rnorm(100, mean = -1)), nrow = 20)
 rownames(mat) <- paste0("gene-", 1:20)
@@ -57,7 +57,7 @@ I the following examples, we use the smaller of the two to demonstrate the basic
 
 #### Cancer-associated genes
 26 genes commonly associated with cancer in general were selected to provide a small demonstration data set.
-``` {r, out.width='85%', fig.width=6, fig.height=4, fig.align='center'}
+``` {r, out.width='85%', fig.width=6, fig.height=6, fig.align='center'}
 ## Read data and prepare input data frame
 fl <- system.file("extdata", "PrCaTCGASample.txt", package = "coreheat", mustWork = TRUE)
 dat0 <- read.delim(fl, stringsAsFactors=FALSE)
@@ -67,7 +67,7 @@ cormap2(dat1, main="TCGA data frame + ID conversion")
 
 ##### Highlight genes of interest
 Separately supplied IDs are used with a matrix created from the data frame of the previous example and genes of interest are highlighted inside the heatmap to emphasise individual pair-wise correlations.
-``` {r, out.width='85%', fig.width=6, fig.height=4, fig.align='center'}
+``` {r, out.width='85%', fig.width=6, fig.height=6, fig.align='center'}
 dat2 <- as.matrix(dat0[, grep("TCGA", names(dat0))])
 sym <- dat0$hgnc_symbol
 cormap2(dat1, convert=FALSE, lab=sym, genes2highl=c("GNAS","NCOR1","AR", "ATM"),
@@ -76,17 +76,90 @@ main="TCGA matrix + custom labels")
 
 ##### Use an ExpressionSet object and add significance asterisks
 The ExpressionSet object is created using the numeric data frame created above from the small TCGA dataset.
-``` {r, out.width='85%', fig.width=6, fig.height=4, fig.align='center'}
+``` {r, out.width='85%', fig.width=10, fig.height=10,  fig.align='center'}
 expr <- Biobase::ExpressionSet(as.matrix(dat1))
-cormap2(expr, add.sig=TRUE, main="TCGA ExpressionSet object + ID conversion")
+cormap2(expr, add.sig=TRUE, autoadj=FALSE, cex=1, main="TCGA ExpressionSet object + ID conversion")
 ```
 
 #### Large dataset
 500 genes were selected at random to demonstrate handling of larger datasets. We will first plot the entire matrix and then use the filtering capabilities of `cormap2` to identify possibly co-expressed genes.
-```{r, out.width='85%', fig.width=6, fig.height=4, fig.align='center'}
+##### Full map
+```{r, out.width='85%', fig.width=6, fig.height=6, fig.align='center'}
 fl <- system.file("extdata", "PrCaTCGASample_500.txt", package = "coreheat", mustWork = TRUE)
 dat0_500 <- read.delim(fl, stringsAsFactors=FALSE)
 dat1_500 <- data.frame(dat0_500[, grep("TCGA", names(dat0_500))], row.names=dat0_500$ensembl_gene_id)
-cormap2(dat1_500, main="TCGA 500 genes")
+cormap2(dat1_500, biomart = TRUE, main="TCGA 500 genes")
+```
+
+##### Filtering
+###### Filter by tree branch height
+Dendrogram branches are cut using function `cutreeStatic` from the `WGCNA` package. This will reduce the number of branches and, in consequence, the size of the correlation map, while retaining closely correlated values.  
+Note that getting the values for `cut.thr` and `cut-size` right can take a bit trial and error.  
+The number of rows left after filtering is added automatically if cutting is enabled. To remove that sub-title set `postfix` to `FALSE`.  
+We also highlight a few genes that all appear to have a high correlation to see if we find them again in the next plot.
+```{r, out.width='85%', fig.width=7, fig.height=7, fig.align='center'}
+cm <- cormap2(dat1_500, cut.thr = 1.5, cut.size = 40, biomart = TRUE,
+              genes2highl = c("RPLP1", "NOP53", "RPL13", "RPS17", "RPL11", "RPS24", "RPL30", "EEF1D", "RPL27",
+                              "SNHG29", "HSPA1A", "HSPA1B", "DNAJB1", "BHLHE40", "NR4A1", "JUND", "HLA-A", "HLA-B",
+                              "BTF3", "EEF1A1P9"),
+              main="TCGA 500 genes", verbose = TRUE)
+```
+This effectively zooms into the upper right corner of the large heatmap. In the next step we reduce the branch height to get regions with even shorter distances.  
+To start where we left off we use the correlation matrix produced in the previous step. We set the cut threshold quite low to get the shortest distances, only, and the number of objects per branch (needed to be considered a cluster) to a small value, too, to also find smaller regions.
+```{r, out.width='85%', fig.width=6, fig.height=6, fig.align='center'}
+cm2 <- cormap2(cormat = cm, cut.thr = 1.2, cut.size = 20, biomart = TRUE,
+               genes2highl = c("RPLP1", "NOP53", "RPL13", "RPS17", "RPL11", "RPS24", "RPL30", "EEF1D", "RPL27",
+                               "SNHG29", "HSPA1A", "HSPA1B", "DNAJB1", "BHLHE40", "NR4A1", "JUND", "HLA-A", "HLA-B",
+                               "BTF3", "EEF1A1P9"),
+               main="TCGA 500 genes", cex = 0.9, verbose = TRUE)
+```
+The genes we highlighted in the large map are found here, too. Filtering by branch height reduced the matrix further "picking" regions with similarly correlating values, in our case the bottom left block of positively correlated genes.  
+
+<br>  
+
+###### Filter by correlation threshold
+But what if we want to filter for only highly correlating values? The package offers two approaches to pick "clusters" of values with a correlation above a certain threshold, a sliding window approach where the map is searched for the threshold and then the window is expanded as long as the threshold is met, and a simple margin approach where the threshold must be met in a given percentage of the rows.  
+
+<br>  
+
+__Sliding window__
+The user can set the size of the window, the correlation threshold and the "number" of the cluster to be picked. The cluster "number" here is a subjective value chosen after inspecting the source heatmap by eye and starting to count from the bottom left. For example, the first cluster with a correlation above 0.6 should give us the darker red block in the bottom left corner of the first map (object `cm`). Hence we set the window size to 5 and ask the function to highlight all the genes it finds from the same list as above. We add significance asterisks to see how good our correlation is.
+```{r, out.width='85%', fig.width=6, fig.height=6, fig.align='center'}
+cm3 <- cormap2(cormat = cm, cor.thr = 0.6, cor.window = 5, cor.cluster = 1, biomart = TRUE,
+               genes2highl = c("RPLP1", "NOP53", "RPL13", "RPS17", "RPL11", "RPS24", "RPL30", "EEF1D", "RPL27",
+                               "SNHG29", "HSPA1A", "HSPA1B", "DNAJB1", "BHLHE40", "NR4A1", "JUND", "HLA-A", "HLA-B",
+                               "BTF3", "EEF1A1P9"),
+               add.sig = TRUE, cex = 2, main="TCGA 500 genes", verbose = TRUE)
+```
+This approach picked the block we expected.  
+
+<br>  
+
+To find negative or positive correlations, the function offers the possibility to filter by correlation threshold and a margin of rows in which the threshold is met. We start with the first matrix above and set the margin to 0.1 which corresponds to 10% of the rows. Note that this will pick all possible rows, not only adjacent ones.
+__Positive correlation__
+```{r, out.width='85%', fig.width=6, fig.height=6, fig.align='center'}
+cm3 <- cormap2(cormat = cm, cor.thr = 0.6, cor.mar = 0.3, biomart = TRUE,
+               genes2highl = c("RPLP1", "NOP53", "RPL13", "RPS17", "RPL11", "RPS24", "RPL30", "EEF1D", "RPL27",
+                               "SNHG29", "HSPA1A", "HSPA1B", "DNAJB1", "BHLHE40", "NR4A1", "JUND", "HLA-A",
+                               "HLA-B"),
+               main="TCGA 500 genes", cex = 1, verbose = T)
+```
+This also extracted a region from the positively correlated region at the bottom left of the original matrix but only the genes correlating above the threshold.
+
+__Negative correlation__
+Since there are less and less extreme negative correlations in the matrix we have to set the thresholds to very lax values.
+```{r, out.width='85%', fig.width=8, fig.height=8, fig.align='center'}
+cm3 <- cormap2(cormat = cm, cor.thr = -0.2, cor.mar = 0.2, biomart = F,
+               genes2highl = c("RPLP1", "NOP53", "RPL13", "RPS17", "RPL11", "RPS24", "RPL30", "EEF1D", "RPL27",
+                               "SNHG29", "HSPA1A", "HSPA1B", "DNAJB1", "BHLHE40", "NR4A1", "JUND", "HLA-A",
+                               "HLA-B"),
+               add.sig = TRUE, cex = 2, main="TCGA 500 genes")
+```
+
+###### Filter by noise level and hierarchy
+The function `cormap_filt`  splits (cuts) a dendrogram of a hierarchically clustered distance matrix at a given threshold dividing it into larger or smaller "sub-clusters". Correlation P-Values are converted to represent significance as a sub-cluster-wise signal metric used for filtering. Optionally, up to 3 plots are produced, the third one being a filtered heatmap based on significance and three height cutting.  
+`cormap_filt` is a convenience function that accepts an ExpressionSet, a data frame or a numeric matrix as input. Note, that it will not work on a correlation matrix, as it needs the P-Values calculated internally for filtering.
+```{r, out.width='85%', fig.width=8, fig.height=8, fig.align='center'}
+cormap_filt(dat1_500, main = "TCGA 500 genes", cut.thr = 21, p.thr = 0.01, cex.filt = 0.8)
 ```
 

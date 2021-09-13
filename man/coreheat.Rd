@@ -15,7 +15,7 @@ Create correlation heatmaps from a numeric matrix. Ensembl Gene ID row names can
 \tabular{ll}{
 Package: \tab coreheat\cr
 Type: \tab Package\cr
-Initial version: \tab 0.1-0\cr
+Initial version: \tab 0.1.0\cr
 Created: \tab 2016-08-11\cr
 License: \tab GPL-3\cr
 The main function to be called by end users is \command{cormap2} which is wrapper performing all necessary steps to create a heatmap.
