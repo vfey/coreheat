@@ -2,7 +2,7 @@
 title: CRAN package coreheat
 ---
 
-## Resubmission 2021-09-07
+## Resubmission 2021-09-17
 This is resubmission of the package. The version was increased to 0.2.2 after addressing the comments by CRAN member Gregor Seyer:  
 
 * replaced `cat` with `message` to make verbose output be suppressable
