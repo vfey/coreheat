@@ -4,7 +4,7 @@ title: CRAN package coreheat
 
 ## Resubmission 2026-02-05
 This is a new submission of the package after it was archived on 2021-12-13 as check problems were not corrected in time.  
-The version was increased to 0.3.1 after addressing the comments by Prof Brian Ripley regarding failure when accessing an internet resource.  
+The version was increased to 0.3.2 after addressing the comments by Prof Brian Ripley regarding failure when accessing an internet resource.  
 An additional update addressed an issue with gene ID conversion.
 Both fixes required a change in the dependency 'convertid', which is resubmitted at the same time. Changes in the 'coreheat' package are hence minor and include mainly a number of error handling iterations to allow the function to continue should the online resource not be responding.  
 The check on the local Mac returned no issues. The check on the Red Hat server returned a NOTE under 'CRAN incoming feasibility' about a URL which is mentioned in a reference in the documentation.  
