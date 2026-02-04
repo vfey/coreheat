@@ -1,8 +1,8 @@
 Package: coreheat
 Type: Package
 Title: Correlation Heatmaps
-Version: 0.2.2
-Date: 2021-09-13
+Version: 0.3.0
+Date: 2026-02-04
 Author: Vidal Fey [aut, cre], Henri Sara [aut]
 Authors@R: c(person("Vidal", "Fey", email = "vidal.fey@gmail.com", role=c("aut", "cre")), person("Henri", "Sara", email = "henri.sara@gmail.com", role=c("aut")))
 Maintainer: Vidal Fey <vidal.fey@gmail.com>
@@ -12,10 +12,10 @@ Description: Create correlation heatmaps from a numeric matrix. Ensembl Gene ID 
      asterisks encoding corresponding P-Values. Plot dimensions and label measures are adjusted automatically by default.
      The plot features rely on the heatmap.n2() function in the 'heatmapFlex' package.
 Depends: Biobase
-Imports: WGCNA, heatmapFlex, convertid (>= 0.1.3), methods, graphics, grDevices
+Imports: WGCNA, heatmapFlex, convertid (>= 0.2.1), methods, graphics, grDevices, rappdirs
 License: GPL-3
 Encoding: UTF-8
-RoxygenNote: 7.1.1
+RoxygenNote: 7.3.3
 Suggests: 
     rmarkdown,
     knitr

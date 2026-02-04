@@ -2,6 +2,7 @@
 % Please edit documentation in R/cormap2.R
 \docType{package}
 \name{coreheat}
+\alias{coreheat-package}
 \alias{coreheat}
 \title{Draw Correlation Heatmaps}
 \description{
@@ -25,4 +26,5 @@ The main function to be called by end users is \command{cormap2} which is wrappe
 Vidal Fey <vidal.fey@gmail.com>, Henri Sara <henri.sara@gmail.com>
 Maintainer: Vidal Fey <vidal.fey@gmail.com>
 }
+\keyword{internal}
 \keyword{package}

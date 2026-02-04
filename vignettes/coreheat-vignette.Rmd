@@ -88,7 +88,7 @@ cormap2(expr, add.sig=TRUE, autoadj=FALSE, cex=1, main="TCGA ExpressionSet objec
 fl <- system.file("extdata", "PrCaTCGASample_500.txt", package = "coreheat", mustWork = TRUE)
 dat0_500 <- read.delim(fl, stringsAsFactors=FALSE)
 dat1_500 <- data.frame(dat0_500[, grep("TCGA", names(dat0_500))], row.names=dat0_500$ensembl_gene_id)
-cormap2(dat1_500, biomart = TRUE, main="TCGA 500 genes")
+cormap2(dat1_500, biomart = TRUE, use.cache = F, main="TCGA 500 genes")
 ```
 
 ##### Filtering

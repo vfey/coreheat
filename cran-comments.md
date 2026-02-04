@@ -2,6 +2,15 @@
 title: CRAN package coreheat
 ---
 
+## Resubmission 2026-02-04
+This is resubmission of the package. The version was increased to 0.3.0 after addressing the comments by Prof Brian Ripley regarding failure when accessing an internet resource.  
+The fix required a change in the dependency 'convertid', which is resubmitted at the same time. Changes in this package are hence minor and include mainly a number of error handling iterations to allow the function to continue if the online resource is not responding.
+
+### Test environments (2026-02-04 - )
+* local OS X install: aarch64-apple-darwin25.2.0, R 4.5.2
+* win-builder (devel, release and oldrelease)
+* Red Hat Enterprise Linux release 9.7 (Plow), R 4.5.2
+
 ## Resubmission 2021-09-17
 This is resubmission of the package. The version was increased to 0.2.2 after addressing the comments by CRAN member Gregor Seyer:  
 

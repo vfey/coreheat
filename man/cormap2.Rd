@@ -10,6 +10,13 @@ cormap2(
   lab = NULL,
   convert = TRUE,
   biomart = FALSE,
+  biom.data.set = "hsapiens_gene_ensembl",
+  biom.mart = "ensembl",
+  host = "https://www.ensembl.org",
+  biom.filter = "ensembl_gene_id",
+  biom.attributes = c("ensembl_gene_id", "hgnc_symbol"),
+  biom.cache = rappdirs::user_cache_dir("biomaRt"),
+  use.cache = TRUE,
   cluster_correlations = TRUE,
   main = "",
   postfix = NULL,
@@ -46,6 +53,20 @@ Defaults to \code{TRUE}. Conversion will be done using BioMart or an annotation 
 \item{biomart}{(\code{logical}). Should BioMart (or an annotation package) be used to convert IDs? If \code{TRUE}
 the \code{todisp2} function in package \code{convertid} attempts to access the BioMart API to convert ENSG IDs to Gene Symbols
 Defaults to \code{FALSE} which will use the traditional \code{AnnotationDbi} Bimap interface.}
+
+\item{biom.data.set}{\code{character} of length one. Biomart data set to use. Defaults to 'hsapiens_gene_ensembl'}
+
+\item{biom.mart}{\code{character} vector. Biomart to use (uses the first element of the vector), defaults to "ensembl".}
+
+\item{host}{\code{character} of length one. Host URL.}
+
+\item{biom.filter}{\code{character} of length one. Name of biomart filter, i.e., type of query ids, defaults to "ensembl_gene_id".}
+
+\item{biom.attributes}{\code{character} vector. Biomart attributes, i.e., type of desired result(s); make sure query id type is included!}
+
+\item{biom.cache}{\code{character}. Path name giving the location of the cache \command{getBM()} uses if \code{use.cache=TRUE}. Defaults to the value in the \emph{BIOMART_CACHE} environment variable.}
+
+\item{use.cache}{(\code{logical}). Should \command{getBM()} use the cache? Defaults to \code{TRUE} as in the \command{getBM()} function and is passed on to that.}
 
 \item{cluster_correlations}{(\code{logical}). Should the correlation matrix be clustered before plotting? Defaults to \code{TRUE}.}
 

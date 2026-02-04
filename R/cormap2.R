@@ -1,5 +1,4 @@
 #' @title Draw Correlation Heatmaps
-#' @docType package
 #' @name coreheat
 #' @description Create correlation heatmaps from a numeric matrix. Ensembl Gene ID row names can be converted to Gene Symbols
 #'     using, e.g., BioMart. Optionally, data can be clustered and filtered by correlation, tree cutting and/or number
@@ -18,6 +17,8 @@
 #' }
 #'
 #' @keywords package
+#' @keywords internal
+"_PACKAGE"
 #' @import Biobase
 #' @import heatmapFlex
 #' @import convertid
@@ -25,6 +26,7 @@
 #' @import graphics
 #' @import grDevices
 #' @importFrom methods is
+#' @importFrom rappdirs user_cache_dir
 NULL
 #' Draw correlation maps from large datasets.
 #' @description \command{cormap2()} generates pair-wise correlations from an input ExpressionSet object, a \code{data.frame} or a
@@ -38,6 +40,13 @@ NULL
 #' @param biomart (\code{logical}). Should BioMart (or an annotation package) be used to convert IDs? If \code{TRUE}
 #'     the \code{todisp2} function in package \code{convertid} attempts to access the BioMart API to convert ENSG IDs to Gene Symbols
 #'     Defaults to \code{FALSE} which will use the traditional \code{AnnotationDbi} Bimap interface.
+#' @param biom.data.set \code{character} of length one. Biomart data set to use. Defaults to 'hsapiens_gene_ensembl'
+#' @param biom.mart \code{character} vector. Biomart to use (uses the first element of the vector), defaults to "ensembl".
+#' @param host \code{character} of length one. Host URL.
+#' @param biom.filter \code{character} of length one. Name of biomart filter, i.e., type of query ids, defaults to "ensembl_gene_id".
+#' @param biom.attributes \code{character} vector. Biomart attributes, i.e., type of desired result(s); make sure query id type is included!
+#' @param biom.cache \code{character}. Path name giving the location of the cache \command{getBM()} uses if \code{use.cache=TRUE}. Defaults to the value in the \emph{BIOMART_CACHE} environment variable.
+#' @param use.cache (\code{logical}). Should \command{getBM()} use the cache? Defaults to \code{TRUE} as in the \command{getBM()} function and is passed on to that.
 #' @param cluster_correlations (\code{logical}). Should the correlation matrix be clustered before plotting? Defaults to \code{TRUE}.
 #' @param main (\code{character}). The main title of the plot. Defaults to \code{""}.
 #' @param postfix (\code{character} of \code{logical}). A plot sub-title. Will be printed below the main title. Defaults to \code{NULL}.
@@ -132,10 +141,37 @@ NULL
 #'
 #' # More examples can be found in the vignette.
 #' @export
-cormap2 <- function(x, cormat = NULL, lab = NULL, convert = TRUE, biomart = FALSE, cluster_correlations = TRUE, main = "",
-                    postfix = NULL, cex = NULL, na.frac = 0.1, cor.cluster = 1, cor.window = NULL, cor.thr = NULL,
-                    cor.mar = 0.5, cut.thr = NULL, cut.size = 5, autoadj = TRUE, labelheight= NULL, labelwidth = NULL,
-                    add.sig = FALSE, genes2highl = NULL, order.list = TRUE, doPlot = TRUE, updateProgress = NULL,
+cormap2 <- function(x,
+                    cormat = NULL,
+                    lab = NULL,
+                    convert = TRUE,
+                    biomart = FALSE,
+                    biom.data.set = "hsapiens_gene_ensembl",
+                    biom.mart = "ensembl",
+                    host = "https://www.ensembl.org",
+                    biom.filter = "ensembl_gene_id",
+                    biom.attributes = c("ensembl_gene_id", "hgnc_symbol"),
+                    biom.cache = rappdirs::user_cache_dir("biomaRt"),
+                    use.cache = TRUE,
+                    cluster_correlations = TRUE,
+                    main = "",
+                    postfix = NULL,
+                    cex = NULL,
+                    na.frac = 0.1,
+                    cor.cluster = 1,
+                    cor.window = NULL,
+                    cor.thr = NULL,
+                    cor.mar = 0.5,
+                    cut.thr = NULL,
+                    cut.size = 5,
+                    autoadj = TRUE,
+                    labelheight= NULL,
+                    labelwidth = NULL,
+                    add.sig = FALSE,
+                    genes2highl = NULL,
+                    order.list = TRUE,
+                    doPlot = TRUE,
+                    updateProgress = NULL,
                     verbose = FALSE)
 {
   if (missing(x) && is.null(cormat)) stop("Need one of 'x' or 'cormat'!")
@@ -209,7 +245,22 @@ cormap2 <- function(x, cormat = NULL, lab = NULL, convert = TRUE, biomart = FALS
   if (verbose) message("  Checking input IDs:")
   if (convert) {
     if (verbose) message("    Attempting to convert input matrix row names...")
-    xl <- xlab <- convertid::todisp2(rownames(cormat), biomart = biomart, verbose = verbose)
+    xl <- xlab <- try(convertid::todisp2(rownames(cormat), biomart = biomart, biom.data.set=biom.data.set,
+                                 biom.mart=biom.mart, host=host, biom.filter=biom.filter,
+                                 biom.attributes=biom.attributes, biom.cache = biom.cache,
+                                 use.cache = use.cache, keep.original = TRUE, verbose = verbose))
+    if (is(xl, "try-error")) {
+      xl <- xlab <- try(convertid::todisp2(rownames(cormat), biomart = biomart, biom.data.set=biom.data.set,
+                                   biom.mart=biom.mart, host=host, biom.filter=biom.filter,
+                                   biom.attributes=biom.attributes, biom.cache = biom.cache,
+                                   use.cache = FALSE, keep.original = TRUE, verbose = verbose))
+      if (is(xl, "try-error")) {
+        xl <- xlab <- convertid::todisp2(rownames(cormat), biomart = FALSE, biom.data.set=biom.data.set,
+                                 biom.mart=biom.mart, host=host, biom.filter=biom.filter,
+                                 biom.attributes=biom.attributes, biom.cache = biom.cache,
+                                 use.cache = use.cache, keep.original = TRUE, verbose = verbose)
+      }
+    }
     yl <- ylab <- rev(xl)
   } else {
     if (verbose) message("    Using input matrix row names...")
@@ -599,6 +650,13 @@ signal_metric <- function(x) {
 #' @param biomart (\code{logical}). Should BioMart (or an annotation package) be used to convert IDs? If \code{TRUE}
 #'     the \code{todisp2} function in package \code{convertid} attempts to access the BioMart API to convert ENSG IDs to Gene Symbols
 #'     Defaults to \code{FALSE} which will use the traditional \code{AnnotationDbi} Bimap interface.
+#' @param biom.data.set \code{character} of length one. Biomart data set to use. Defaults to 'hsapiens_gene_ensembl'
+#' @param biom.mart \code{character} vector. Biomart to use (uses the first element of the vector), defaults to "ensembl".
+#' @param host \code{character} of length one. Host URL.
+#' @param biom.filter \code{character} of length one. Name of biomart filter, i.e., type of query ids, defaults to "ensembl_gene_id".
+#' @param biom.attributes \code{character} vector. Biomart attributes, i.e., type of desired result(s); make sure query id type is included!
+#' @param biom.cache \code{character}. Path name giving the location of the cache \command{getBM()} uses if \code{use.cache=TRUE}. Defaults to the value in the \emph{BIOMART_CACHE} environment variable.
+#' @param use.cache (\code{logical}). Should \command{getBM()} use the cache? Defaults to \code{TRUE} as in the \command{getBM()} function and is passed on to that.
 #' @param add.sig (\code{logical}). Should significance asterisks be drawn? If \code{TRUE} P-Values for correlation significance
 #'     are calculated and encoded as asterisks. See 'Details'.
 #' @param verbose (\code{logical}). Should verbose output be written to the console? Defaults to \code{FALSE}.
@@ -634,10 +692,33 @@ signal_metric <- function(x) {
 #' }
 #'
 #' @export
-cormap_filt <- function(x, na.frac=0.1, method="ward.D", do.abs=TRUE, main="correlation map",
-                        postfix = NULL, p.thr=0.01, cex=0.2, cex.clust=cex, cex.filt=cex, cut.thr=NULL,
-                        cor.thr = NULL, cor.cluster = 1, cor.window = NULL, do.plots=c("dend", "full.heat", "filt.heat"),
-                        genes2highl=NULL, order.list=TRUE, convert = TRUE, biomart = FALSE, add.sig = FALSE,
+cormap_filt <- function(x,
+                        na.frac=0.1,
+                        method="ward.D",
+                        do.abs=TRUE,
+                        main="correlation map",
+                        postfix = NULL,
+                        p.thr=0.01,
+                        cex=0.2,
+                        cex.clust=cex,
+                        cex.filt=cex,
+                        cut.thr=NULL,
+                        cor.thr = NULL,
+                        cor.cluster = 1,
+                        cor.window = NULL,
+                        do.plots=c("dend", "full.heat", "filt.heat"),
+                        genes2highl=NULL,
+                        order.list=TRUE,
+                        convert = TRUE,
+                        biomart = FALSE,
+                        biom.data.set = "hsapiens_gene_ensembl",
+                        biom.mart = "ensembl",
+                        host = "https://www.ensembl.org",
+                        biom.filter = "ensembl_gene_id",
+                        biom.attributes = c("ensembl_gene_id", "hgnc_symbol"),
+                        biom.cache = rappdirs::user_cache_dir("biomaRt"),
+                        use.cache = TRUE,
+                        add.sig = FALSE,
                         verbose = FALSE) {
   if (dev.interactive()) {
     opar <- par(no.readonly=TRUE)
@@ -660,7 +741,23 @@ cormap_filt <- function(x, na.frac=0.1, method="ward.D", do.abs=TRUE, main="corr
     if (verbose) message(">> Plotting dendrogram...")
     ccl <- cormat.cl
     if (convert) {
-      ccl$hclust$labels <- convertid::todisp2(ccl$hclust$labels, biomart = biomart, verbose = verbose)
+      lbls <- try(convertid::todisp2(ccl$hclust$labels, biomart = biomart, biom.data.set=biom.data.set,
+                                              biom.mart=biom.mart, host=host, biom.filter=biom.filter,
+                                              biom.attributes=biom.attributes, biom.cache = biom.cache,
+                                              use.cache = use.cache, keep.original = TRUE, verbose = verbose))
+      if (is(lbls, "try-error")) {
+        lbls <- try(convertid::todisp2(ccl$hclust$labels, biomart = biomart, biom.data.set=biom.data.set,
+                                       biom.mart=biom.mart, host=host, biom.filter=biom.filter,
+                                       biom.attributes=biom.attributes, biom.cache = biom.cache,
+                                       use.cache = FALSE, keep.original = TRUE, verbose = verbose))
+        if (is(lbls, "try-error")) {
+          lbls <- convertid::todisp2(ccl$hclust$labels, biomart = FALSE, biom.data.set=biom.data.set,
+                                     biom.mart=biom.mart, host=host, biom.filter=biom.filter,
+                                     biom.attributes=biom.attributes, biom.cache = biom.cache,
+                                     use.cache = use.cache, keep.original = TRUE, verbose = verbose)
+        }
+      }
+      ccl$hclust$labels <- lbls
     }
     plot(ccl$hclust, cex=cex.clust)
     if (!is.null(cut.thr)) abline(h=cut.thr)
@@ -673,8 +770,39 @@ cormap_filt <- function(x, na.frac=0.1, method="ward.D", do.abs=TRUE, main="corr
     }
     xl <- yl <- NA
     if (convert) {
-      xl <- convertid::todisp2(rownames(cormat.cl$cormat), biomart = biomart, verbose = verbose)
-      yl <- convertid::todisp2(colnames(cormat.cl$cormat), biomart = biomart, verbose = verbose)
+      xl <- try(convertid::todisp2(rownames(cormat.cl$cormat), biomart = biomart, biom.data.set=biom.data.set,
+                                   biom.mart=biom.mart, host=host, biom.filter=biom.filter,
+                                   biom.attributes=biom.attributes, biom.cache = biom.cache,
+                                   use.cache = use.cache, keep.original = TRUE, verbose = verbose))
+      if (is(xl, "try-error")) {
+        xl <- try(convertid::todisp2(rownames(cormat.cl$cormat), biomart = biomart, biom.data.set=biom.data.set,
+                                     biom.mart=biom.mart, host=host, biom.filter=biom.filter,
+                                     biom.attributes=biom.attributes, biom.cache = biom.cache,
+                                     use.cache = FALSE, keep.original = TRUE, verbose = verbose))
+        if (is(xl, "try-error")) {
+          xl <- convertid::todisp2(rownames(cormat.cl$cormat), biomart = FALSE, biom.data.set=biom.data.set,
+                                       biom.mart=biom.mart, host=host, biom.filter=biom.filter,
+                                       biom.attributes=biom.attributes, biom.cache = biom.cache,
+                                       use.cache = use.cache, keep.original = TRUE, verbose = verbose)
+        }
+      }
+
+      yl <- try(convertid::todisp2(colnames(cormat.cl$cormat), biomart = biomart, biom.data.set=biom.data.set,
+                                   biom.mart=biom.mart, host=host, biom.filter=biom.filter,
+                                   biom.attributes=biom.attributes, biom.cache = biom.cache,
+                                   use.cache = use.cache, keep.original = TRUE, verbose = verbose))
+      if (is(yl, "try-error")) {
+        yl <- try(convertid::todisp2(colnames(cormat.cl$cormat), biomart = biomart, biom.data.set=biom.data.set,
+                                     biom.mart=biom.mart, host=host, biom.filter=biom.filter,
+                                     biom.attributes=biom.attributes, biom.cache = biom.cache,
+                                     use.cache = FALSE, keep.original = TRUE, verbose = verbose))
+        if (is(yl, "try-error")) {
+          yl <- convertid::todisp2(colnames(cormat.cl$cormat), biomart = FALSE, biom.data.set=biom.data.set,
+                                       biom.mart=biom.mart, host=host, biom.filter=biom.filter,
+                                       biom.attributes=biom.attributes, biom.cache = biom.cache,
+                                       use.cache = use.cache, keep.original = TRUE, verbose = verbose)
+        }
+      }
     }
     heatmap.cor(cormat.cl$cormat, order.list = order.list, main=main, main_postfix=postfix, x.labels = xl,
                       y.labels = yl, cex=cex, genes2highl=genes2highl, add.sig = add.sig, pv = cormat.cl$pvalues,
@@ -710,8 +838,39 @@ cormap_filt <- function(x, na.frac=0.1, method="ward.D", do.abs=TRUE, main="corr
       }
       xl <- yl <- NA
       if (convert) {
-        xl <- convertid::todisp2(rownames(cormat.cl$cormat), biomart = biomart, verbose = verbose)
-        yl <- convertid::todisp2(colnames(cormat.cl$cormat), biomart = biomart, verbose = verbose)
+        xl <- try(convertid::todisp2(rownames(cormat.cl$cormat), biomart = biomart, biom.data.set=biom.data.set,
+                                     biom.mart=biom.mart, host=host, biom.filter=biom.filter,
+                                     biom.attributes=biom.attributes, biom.cache = biom.cache,
+                                     use.cache = use.cache, keep.original = TRUE, verbose = verbose))
+        if (is(xl, "try-error")) {
+          xl <- try(convertid::todisp2(rownames(cormat.cl$cormat), biomart = biomart, biom.data.set=biom.data.set,
+                                       biom.mart=biom.mart, host=host, biom.filter=biom.filter,
+                                       biom.attributes=biom.attributes, biom.cache = biom.cache,
+                                       use.cache = FALSE, keep.original = TRUE, verbose = verbose))
+          if (is(xl, "try-error")) {
+            xl <- convertid::todisp2(rownames(cormat.cl$cormat), biomart = FALSE, biom.data.set=biom.data.set,
+                                     biom.mart=biom.mart, host=host, biom.filter=biom.filter,
+                                     biom.attributes=biom.attributes, biom.cache = biom.cache,
+                                     use.cache = use.cache, keep.original = TRUE, verbose = verbose)
+          }
+        }
+
+        yl <- try(convertid::todisp2(colnames(cormat.cl$cormat), biomart = biomart, biom.data.set=biom.data.set,
+                                     biom.mart=biom.mart, host=host, biom.filter=biom.filter,
+                                     biom.attributes=biom.attributes, biom.cache = biom.cache,
+                                     use.cache = use.cache, keep.original = TRUE, verbose = verbose))
+        if (is(yl, "try-error")) {
+          yl <- try(convertid::todisp2(colnames(cormat.cl$cormat), biomart = biomart, biom.data.set=biom.data.set,
+                                       biom.mart=biom.mart, host=host, biom.filter=biom.filter,
+                                       biom.attributes=biom.attributes, biom.cache = biom.cache,
+                                       use.cache = FALSE, keep.original = TRUE, verbose = verbose))
+          if (is(yl, "try-error")) {
+            yl <- convertid::todisp2(colnames(cormat.cl$cormat), biomart = FALSE, biom.data.set=biom.data.set,
+                                     biom.mart=biom.mart, host=host, biom.filter=biom.filter,
+                                     biom.attributes=biom.attributes, biom.cache = biom.cache,
+                                     use.cache = use.cache, keep.original = TRUE, verbose = verbose)
+          }
+        }
       }
       heatmap.cor(cormat.cl$cormat, order.list = order.list, main=main, main_postfix=postfix, x.labels = xl,
                         y.labels = yl, cex=cex.filt, add.sig = add.sig, pv = cormat.cl$pvalues,
