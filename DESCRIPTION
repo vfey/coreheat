@@ -1,7 +1,7 @@
 Package: coreheat
 Type: Package
 Title: Correlation Heatmaps
-Version: 0.3.1
+Version: 0.3.2
 Date: 2026-02-04
 Author: Vidal Fey [aut, cre], Henri Sara [aut]
 Authors@R: c(person("Vidal", "Fey", email = "vidal.fey@gmail.com", role=c("aut", "cre")), person("Henri", "Sara", email = "henri.sara@gmail.com", role=c("aut")))
@@ -18,5 +18,8 @@ Encoding: UTF-8
 RoxygenNote: 7.3.3
 Suggests: 
     rmarkdown,
-    knitr
+    knitr,
+    BiocManager,
+    org.Hs.eg.db,
+    org.Mm.eg.db
 VignetteBuilder: knitr
