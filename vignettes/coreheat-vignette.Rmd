@@ -53,7 +53,7 @@ cormap2(mat, convert = FALSE, main="Random matrix")
 ### Use a _real-world_ dataset from TCGA
 A dataset consisting of [333 patients with primary prostate cancer](https://www.cbioportal.org/study/summary?id=prad_tcga_pub) was downloaded from The Cancer Genome Atlas (TCGA) via the cBioPortal for Cancer Genomics and two subsets were created, __PrCaTCGASample.txt__ containing genes commonly associated with cancer, and __PrCaTCGASample_500.txt__ containing 500 genes selected at random.  
 Function \code{\link[convertid]{todisp2}} is used to convert Ensembl Gene IDs to HGNC Symbols.  
-I the following examples, we use the smaller of the two to demonstrate the basic functionality of the package.
+In the following examples, we use the smaller of the two to demonstrate the basic functionality of the package.
 
 #### Cancer-associated genes
 26 genes commonly associated with cancer in general were selected to provide a small demonstration data set.
